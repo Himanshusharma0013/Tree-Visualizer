@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Visualizer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input {
+      padding: 0.625rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #1a1a1a;
+      color: #fff;
+      width: 120px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #4a9eff;
+    }
+
+    input::placeholder {
+      color: #666;
+    }
+
+    button {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-insert {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .btn-insert:hover {
+      background: #16a34a;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-delete:hover {
+      background: #dc2626;
+    }
+
+    .btn-load {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-load:hover {
+      background: #2563eb;
+    }
+
+    .canvas-container {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>Binary Tree Visualizer</h1>
+  
+  <div class="controls">
+    <input type="number" id="valueInput" placeholder="Value">
+    <button class="btn-insert" onclick="insertValue()">Insert</button>
+    <button class="btn-delete" onclick="deleteValue()">Delete</button>
+    <button class="btn-load" onclick="loadFromJSON()">Load JSON</button>
+  </div>
+
+  <div class="canvas-container">
+    <canvas id="treeCanvas" width="800" height="500"></canvas>
+  </div>
+
+  <div class="status" id="status">Click "Load JSON" to load tree from output.json</div>
+
+  <script>
+    const canvas = document.getElementById('treeCanvas');
+    const ctx = canvas.getContext('2d');
+    const input = document.getElementById('valueInput');
+    const status = document.getElementById('status');
+
+    let root = null;
+
+    const NODE_RADIUS = 22;
+    const VERTICAL_GAP = 70;
+    const COLORS = {
+      node: '#3b82f6',
+      nodeStroke: '#60a5fa',
+      text: '#ffffff',
+      line: '#4b5563'
+    };
+
+    // Binary Tree Node
+    class TreeNode {
+      constructor(value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+      }
+    }
+
+    // Insert into BST
+    function insert(node, value) {
+      if (!node) return new TreeNode(value);
+      if (value < node.value) {
+        node.left = insert(node.left, value);
+      } else if (value > node.value) {
+        node.right = insert(node.right, value);
+      }
+      return node;
+    }
+
+    // Delete from BST
+    function deleteNode(node, value) {
+      if (!node) return null;
+      
+      if (value < node.value) {
+        node.left = deleteNode(node.left, value);
+      } else if (value > node.value) {
+        node.right = deleteNode(node.right, value);
+      } else {
+        if (!node.left) return node.right;
+        if (!node.right) return node.left;
+        
+        let minNode = node.right;
+        while (minNode.left) minNode = minNode.left;
+        node.value = minNode.value;
+        node.right = deleteNode(node.right, minNode.value);
+      }
+      return node;
+    }
+
+    // Convert JSON to TreeNode
+    function jsonToTree(json) {
+      if (!json) return null;
+      const node = new TreeNode(json.value);
+      node.left = jsonToTree(json.left);
+      node.right = jsonToTree(json.right);
+      return node;
+    }
+
+    // Calculate tree depth
+    function getDepth(node) {
+      if (!node) return 0;
+      return 1 + Math.max(getDepth(node.left), getDepth(node.right));
+    }
+
+    // Draw the tree
+    function drawTree() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!root) {
+        ctx.fillStyle = '#666';
+        ctx.font = '16px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.fillText('Tree is empty', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      const depth = getDepth(root);
+      const startX = canvas.width / 2;
+      const startY = 50;
+      const initialOffset = canvas.width / 4;
+
+      drawNode(root, startX, startY, initialOffset);
+    }
+
+    // Draw a single node and its children recursively
+    function drawNode(node, x, y, offset) {
+      if (!node) return;
+
+      // Draw lines to children first (behind nodes)
+      if (node.left) {
+        drawLine(x, y, x - offset, y + VERTICAL_GAP);
+        drawNode(node.left, x - offset, y + VERTICAL_GAP, offset / 2);
+      }
+      if (node.right) {
+        drawLine(x, y, x + offset, y + VERTICAL_GAP);
+        drawNode(node.right, x + offset, y + VERTICAL_GAP, offset / 2);
+      }
+
+      // Draw node circle
+      ctx.beginPath();
+      ctx.arc(x, y, NODE_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.node;
+      ctx.fill();
+      ctx.strokeStyle = COLORS.nodeStroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw value text
+      ctx.fillStyle = COLORS.text;
+      ctx.font = 'bold 14px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.value, x, y);
+    }
+
+    // Draw connecting line
+    function drawLine(x1, y1, x2, y2) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1 + NODE_RADIUS);
+      ctx.lineTo(x2, y2 - NODE_RADIUS);
+      ctx.strokeStyle = COLORS.line;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Insert value handler
+    function insertValue() {
+      const value = parseInt(input.value);
+      if (isNaN(value)) {
+        status.textContent = 'Please enter a valid number';
+        return;
+      }
+      root = insert(root, value);
+      drawTree();
+      status.textContent = `Inserted: ${value}`;
+      input.value = '';
+    }
+
+    // Delete value handler
+    function deleteValue() {
+      const value = parseInt(input.value);
+      if (isNaN(value)) {
+        status.textContent = 'Please enter a valid number';
+        return;
+      }
+      root = deleteNode(root, value);
+      drawTree();
+      status.textContent = `Deleted: ${value}`;
+      input.value = '';
+    }
+
+    // Load from JSON file
+    async function loadFromJSON() {
+      try {
+        status.textContent = 'Loading...';
+        const response = await fetch('output.json');
+        const data = await response.json();
+        root = jsonToTree(data);
+        drawTree();
+        status.textContent = 'Tree loaded from output.json';
+      } catch (error) {
+        status.textContent = 'Error loading JSON: ' + error.message;
+      }
+    }
+
+    // Handle Enter key
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') insertValue();
+    });
+
+    // Initial draw
+    drawTree();
+  </script>
+</body>
+</html>
