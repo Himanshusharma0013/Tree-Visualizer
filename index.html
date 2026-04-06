@@ -79,6 +79,10 @@
       background: #ef4444;
       color: #fff;
     }
+    .btn-traverse{
+      background-color: purple;
+      color:white;
+    }
 
     .btn-delete:hover {
       background: #dc2626;
@@ -119,6 +123,10 @@
     <button class="btn-insert" onclick="insertValue()">Insert</button>
     <button class="btn-delete" onclick="deleteValue()">Delete</button>
     <button class="btn-load" onclick="loadFromJSON()">Load JSON</button>
+    <button class="btn-traverse" onclick="startInorder()">Inorder</button>
+    <button class="btn-traverse" onclick="startPreorder()">Preorder</button>
+    <button class="btn-traverse" onclick="startPostorder()">Postorder</button>
+
   </div>
 
   <div class="canvas-container">
@@ -235,7 +243,7 @@
       // Draw node circle
       ctx.beginPath();
       ctx.arc(x, y, NODE_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = COLORS.node;
+      ctx.fillStyle = node.highlight ? "red" : COLORS.node;
       ctx.fill();
       ctx.strokeStyle = COLORS.nodeStroke;
       ctx.lineWidth = 2;
@@ -298,6 +306,64 @@
         status.textContent = 'Error loading JSON: ' + error.message;
       }
     }
+
+function highlightNode(node) {
+    node.highlight = true;
+    drawTree();
+
+    setTimeout(() => {
+        delete node.highlight;
+        drawTree();
+    }, 500);
+}
+
+async function startInorder() {
+await inorderTraversal(root);
+}
+
+async function inorderTraversal(node) {
+    if (!node) return;
+
+    await inorderTraversal(node.left);
+
+    highlightNode(node);
+    await sleep(700);
+
+    await inorderTraversal(node.right);
+}
+
+async function startPreorder() {
+    await preorderTraversal(root);
+}
+
+async function preorderTraversal(node) {
+    if (!node) return;
+
+    highlightNode(node);
+    await sleep(700);
+
+    await preorderTraversal(node.left);
+    await preorderTraversal(node.right);
+}
+
+async function startPostorder() {
+    await postorderTraversal(root);
+}
+
+async function postorderTraversal(node) {
+    if (!node) return;
+
+    await postorderTraversal(node.left);
+    await postorderTraversal(node.right);
+
+    highlightNode(node);
+    await sleep(700);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
     // Handle Enter key
     input.addEventListener('keypress', (e) => {

@@ -1,2 +1,30 @@
 
-{"value":200,"left":null,"right":{"value":30,"left":null,"right":{"value":44,"left":null,"right":{"value":60,"left":null,"right":null}}}}
+{
+  "value": 100,
+  "left": {
+    "value": 50,
+    "left": {
+      "value": 20,
+      "left": null,
+      "right": null
+    },
+    "right": {
+      "value": 70,
+      "left": null,
+      "right": null
+    }
+  },
+  "right": {
+    "value": 150,
+    "left": {
+      "value": 120,
+      "left": null,
+      "right": null
+    },
+    "right": {
+      "value": 200,
+      "left": null,
+      "right": null
+    }
+  }
+}
