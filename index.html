@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +22,25 @@
       align-items: center;
       padding: 2rem;
     }
+
+    .status {
+      margin-top: 1rem;
+      font-size: 18px;
+      color: #ccc;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .status:hover {
+      color: #00ffcc;
+      transform: scale(1.2);
+      text-shadow: 0 0 10px #00ffcc;
+    }
+
+    .status:hover {
+    letter-spacing: 1px;
+}
+
 
     h1 {
       font-size: 1.75rem;
@@ -79,9 +98,15 @@
       background: #ef4444;
       color: #fff;
     }
-    .btn-traverse{
+
+    .btn-traverse {
       background-color: purple;
-      color:white;
+      color: white;
+    }
+
+    .btn-search {
+      background-color: rgb(190, 127, 10);
+      color: white;
     }
 
     .btn-delete:hover {
@@ -98,11 +123,22 @@
     }
 
     .canvas-container {
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    overflow: hidden;
+
+    width: 1000px;
+    height: 530px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.canvas-container {
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
 
     canvas {
       display: block;
@@ -115,9 +151,10 @@
     }
   </style>
 </head>
+
 <body>
   <h1>Binary Tree Visualizer</h1>
-  
+
   <div class="controls">
     <input type="number" id="valueInput" placeholder="Value">
     <button class="btn-insert" onclick="insertValue()">Insert</button>
@@ -126,11 +163,13 @@
     <button class="btn-traverse" onclick="startInorder()">Inorder</button>
     <button class="btn-traverse" onclick="startPreorder()">Preorder</button>
     <button class="btn-traverse" onclick="startPostorder()">Postorder</button>
+    <button class="btn-traverse" onclick="startBFS()">LevelOrder</button>
+    <button class="btn-search" onclick="startSearch()">Search</button>
 
   </div>
 
   <div class="canvas-container">
-    <canvas id="treeCanvas" width="800" height="500"></canvas>
+    <canvas id="treeCanvas" width="1000" height="530"></canvas>
   </div>
 
   <div class="status" id="status">Click "Load JSON" to load tree from output.json</div>
@@ -175,7 +214,7 @@
     // Delete from BST
     function deleteNode(node, value) {
       if (!node) return null;
-      
+
       if (value < node.value) {
         node.left = deleteNode(node.left, value);
       } else if (value > node.value) {
@@ -183,7 +222,7 @@
       } else {
         if (!node.left) return node.right;
         if (!node.right) return node.left;
-        
+
         let minNode = node.right;
         while (minNode.left) minNode = minNode.left;
         node.value = minNode.value;
@@ -307,62 +346,121 @@
       }
     }
 
-function highlightNode(node) {
-    node.highlight = true;
-    drawTree();
+    function highlightNode(node) {
+      node.highlight = true;
+      drawTree();
 
-    setTimeout(() => {
+      setTimeout(() => {
         delete node.highlight;
         drawTree();
-    }, 500);
-}
+      }, 500);
+    }
 
-async function startInorder() {
-await inorderTraversal(root);
-}
+    async function startInorder() {
+      await inorderTraversal(root);
+    }
 
-async function inorderTraversal(node) {
-    if (!node) return;
+    async function inorderTraversal(node) {
+      if (!node) return;
 
-    await inorderTraversal(node.left);
+      await inorderTraversal(node.left);
 
-    highlightNode(node);
-    await sleep(700);
+      highlightNode(node);
+      await sleep(700);
 
-    await inorderTraversal(node.right);
-}
+      await inorderTraversal(node.right);
+    }
 
-async function startPreorder() {
-    await preorderTraversal(root);
-}
+    async function startPreorder() {
+      await preorderTraversal(root);
+    }
 
-async function preorderTraversal(node) {
-    if (!node) return;
+    async function preorderTraversal(node) {
+      if (!node) return;
 
-    highlightNode(node);
-    await sleep(700);
+      highlightNode(node);
+      await sleep(700);
 
-    await preorderTraversal(node.left);
-    await preorderTraversal(node.right);
-}
+      await preorderTraversal(node.left);
+      await preorderTraversal(node.right);
+    }
 
-async function startPostorder() {
-    await postorderTraversal(root);
-}
+    async function startPostorder() {
+      await postorderTraversal(root);
+    }
 
-async function postorderTraversal(node) {
-    if (!node) return;
+    async function postorderTraversal(node) {
+      if (!node) return;
 
-    await postorderTraversal(node.left);
-    await postorderTraversal(node.right);
+      await postorderTraversal(node.left);
+      await postorderTraversal(node.right);
 
-    highlightNode(node);
-    await sleep(700);
-}
+      highlightNode(node);
+      await sleep(700);
+    }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+    async function startBFS() {
+      await bfsTraversal(root);
+    }
+    async function bfsTraversal(root) {
+      if (!root) return;
+
+      let queue = [root];
+
+      while (queue.length > 0) {
+        let node = queue.shift();
+
+        // highlight node
+        node.highlight = true;
+        drawTree();
+        await sleep(700);
+
+        node.highlight = false;
+
+        // add children to queue
+        if (node.left) queue.push(node.left);
+        if (node.right) queue.push(node.right);
+      }
+    }
+    async function searchNode(node, value) {
+      if (!node) return null;
+
+      node.highlight = true;
+      drawTree();
+      await sleep(600);
+
+      if (node.value === value) {
+        return node;
+      }
+
+      node.highlight = false;
+
+      if (value < node.value) {
+        return await searchNode(node.left, value);
+      } else {
+        return await searchNode(node.right, value);
+      }
+    }
+
+    async function startSearch() {
+      const value = parseInt(input.value);
+
+      if (isNaN(value)) {
+        status.textContent = "Enter valid number";
+        return;
+      }
+
+      const found = await searchNode(root, value);
+
+      if (found) {
+        status.textContent = `Found: ${value} `;
+      } else {
+        status.textContent = `Not Found: ${value} `;
+      }
+    }
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
 
     // Handle Enter key
@@ -374,4 +472,5 @@ function sleep(ms) {
     drawTree();
   </script>
 </body>
+
 </html>
